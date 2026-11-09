@@ -9,7 +9,8 @@ import { Chevron, Dot, EmptyState, IconButton, LinkButton, SectionTitle } from '
 const WEEKDAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
 /** Pantalla 1 · Calendario mensual. Cada día: punto izquierdo almuerzo, derecho cena. */
-export function MonthScreen({ month }: { month: string }) {
+/** `highlight`: último día abierto; su casilla queda marcada al volver al mes. */
+export function MonthScreen({ month, highlight }: { month: string; highlight?: string }) {
   const { state } = useAgenda();
   const T = todayISO();
   const [y, m] = month.split('-').map(Number);
@@ -69,10 +70,12 @@ export function MonthScreen({ month }: { month: string }) {
                 key={date}
                 type="button"
                 data-date={date}
+                aria-current={date === highlight ? 'date' : undefined}
                 aria-label={label}
                 onClick={() => navigate('dia-' + date)}
                 className={`flex min-h-[60px] min-w-0 flex-col items-center justify-between gap-1.5 border-b border-linea px-0.5 pt-1.5 pb-[9px] sm:min-h-[78px] ${edge}
                   ${mon ? 'bg-lunes text-monte/50' : allBlocked ? 'rayado-suave' : 'hover:bg-barro/[.07]'}
+                  ${date === highlight ? 'shadow-[inset_0_0_0_2px_var(--color-barro)]' : ''}
                   ${past && !mon ? 'text-monte/45' : ''}`}
               >
                 <span

@@ -15,6 +15,8 @@ export default function App() {
   const route = useRoute();
   const { state } = useAgenda();
   const [month, setMonth] = useState(monthOf(todayISO()));
+  // Último día abierto: se marca en la grilla al volver al mes.
+  const [lastDay, setLastDay] = useState<string | undefined>();
   // Servicio elegido por día; si no hay, el último que se miró.
   const [dayTab, setDayTab] = useState<Record<string, ServiceId>>({});
   const [lastService, setLastService] = useState<ServiceId>('almuerzo');
@@ -36,10 +38,13 @@ export default function App() {
       const m = route.month ?? month;
       if (m !== month) setMonth(m);
       tab = 'mes';
-      screen = <MonthScreen month={m} />;
+      screen = <MonthScreen month={m} highlight={lastDay} />;
       break;
     }
     case 'dia': {
+      // La pestaña «Mes» y el botón de calendario llevan al mes de este día.
+      if (route.date !== lastDay) setLastDay(route.date);
+      if (monthOf(route.date) !== month) setMonth(monthOf(route.date));
       tab = route.date === todayISO() ? 'hoy' : 'mes';
       screen = (
         <DayScreen

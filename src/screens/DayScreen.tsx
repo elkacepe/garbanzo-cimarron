@@ -7,7 +7,7 @@ import { blockOf, dayServiceKind, level, pctLabel, serviceState, serviceUsage, t
 import { asientos, personas, reservas } from '../lib/format';
 import { ReservationItem } from '../components/ReservationItem';
 import { StorageBanner } from '../components/StorageBanner';
-import { Banner, Button, Chevron, Dot, Eyebrow, IconButton, LevelPill, StatusPill } from '../components/ui';
+import { Banner, Button, CalendarIcon, Chevron, Dot, Eyebrow, IconButton, LevelPill, StatusPill } from '../components/ui';
 
 export interface NewReservationPrefill {
   date: string;
@@ -31,7 +31,7 @@ export function DayScreen({
   const T = todayISO();
   const d = parseISO(date);
 
-  // Mismo criterio que el mes: fecha a la izquierda, las dos flechas juntas a la derecha.
+  // Mismo criterio que el mes: fecha a la izquierda; flechas y botón del mes juntos a la derecha.
   const head = (
     <div className="flex items-center gap-2.5">
       <div className="min-w-0 flex-1">
@@ -49,6 +49,10 @@ export function DayScreen({
         </IconButton>
         <IconButton label="Día siguiente" onClick={() => navigate('dia-' + addDays(date, 1))}>
           <Chevron dir="r" />
+        </IconButton>
+        {/* Vuelve a la grilla del mes de este día, con la casilla marcada. */}
+        <IconButton label={`Ver ${MESES[d.getMonth()]} completo`} data-ver-mes onClick={() => navigate('mes-' + monthOf(date))}>
+          <CalendarIcon />
         </IconButton>
       </div>
     </div>
