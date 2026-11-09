@@ -41,7 +41,7 @@ Dentro de `index.html`, los números de línea son aproximados:
 
 | Qué | Dónde |
 |---|---|
-| Comentario con decisiones clave (clave del panel, clave de storage, duplicados) | Encabezado, líneas 7–20 |
+| Comentario con decisiones clave (clave del panel, clave de storage, duplicados) | Encabezado, líneas 12–24 |
 | Estilos (colores en `:root`, tipografías, componentes) | `<style>`, líneas ~25–280 |
 | Barra superior y barra de navegación inferior | `<header class="topbar">` y `<nav class="tabbar">`, líneas ~287–305 |
 | **Configuración y catálogo**: servicios, propuestas, restricciones, estados | `/* Configuración */`: `SERVICES`, `PROPOSALS`, `RESTRICTIONS`, `STATUS`, `MAX_COVERS` (líneas ~311–336) |
