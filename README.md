@@ -2,6 +2,8 @@
 
 Agenda interna de reservas para un comedor vegano pequeño, con sus mesas, un mesón compartido y un salón privado. Muestra el mes completo de un vistazo y evita que un mismo lugar quede reservado dos veces en un servicio. Está pensada para el celular y funciona desde 360 px de ancho.
 
+**Previsualización:** https://garbanzo-cimarron.vercel.app/ (Vercel, se actualiza con cada push a `main`).
+
 ---
 
 ## 1. Cómo arrancar el proyecto
@@ -27,7 +29,7 @@ npm run dev          # http://localhost:5173
 | `npm run build` | Chequea los tipos y genera la versión publicable en `dist/`. |
 | `npm run preview` | Sirve el contenido de `dist/` para probar el build. |
 
-El build usa rutas relativas (`base: './'` en `vite.config.ts`), así que `dist/` se puede publicar tal cual en GitHub Pages o en cualquier hosting estático.
+El build usa rutas relativas (`base: './'` en `vite.config.ts`), así que `dist/` se puede publicar tal cual en cualquier hosting estático. Está desplegado en Vercel, que detecta Vite solo (build `npm run build`, salida `dist`) y genera un enlace de previsualización por cada rama o pull request.
 
 Las tipografías se cargan desde Google Fonts en `index.html`. Sin conexión, la app usa fuentes de sistema y sigue funcionando.
 
