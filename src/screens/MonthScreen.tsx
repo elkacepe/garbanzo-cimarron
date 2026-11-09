@@ -40,10 +40,10 @@ export function MonthScreen({ month }: { month: string }) {
           </IconButton>
         </div>
       </div>
-      <p className="mt-0 mb-3.5 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[13px] text-suave">
+      <p className="mt-0 mb-3.5 flex flex-wrap items-baseline gap-x-3.5 gap-y-1.5 text-base text-suave">
         <span><b className="text-monte tabular-nums">{activas.length}</b> reservas activas</span>
         <span><b className="text-monte tabular-nums">{cubiertos}</b> cubiertos</span>
-        {month !== monthOf(T) && <LinkButton onClick={() => navigate('mes-' + monthOf(T))}>Volver a este mes</LinkButton>}
+        {month !== monthOf(T) && <LinkButton onClick={() => navigate('mes-' + monthOf(T))}>Volver al mes en curso</LinkButton>}
       </p>
 
       <div className="overflow-hidden rounded-[10px] border-[1.5px] border-monte bg-papel">
