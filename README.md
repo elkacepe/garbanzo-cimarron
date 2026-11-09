@@ -12,6 +12,8 @@ Agenda interna de reservas para un comedor vegano pequeño, con sus mesas, un me
 
 **Requisitos:** Node **22** (indicado en `.nvmrc`). Como mínimo, Node 20.19, que es lo que exige Vite 8. Probado con npm 10.
 
+Todas las versiones están fijadas exactas en `package.json`. Vitest quedó en **4.0.18** a propósito: con la 4.1.x, `npm install` (npm 10) falla al resolver sus dependencias opcionales con el error `Cannot read properties of null (reading 'edgesOut')`.
+
 ```bash
 git clone https://github.com/elkacepe/garbanzo-cimarron.git
 cd garbanzo-cimarron
@@ -58,7 +60,7 @@ garbanzo-cimarron/
 │   │   └── router.ts           ← navegación por hash, sin librerías
 │   ├── components/
 │   │   ├── AppShell.tsx        ← barra superior, barra inferior y aviso flotante
-│   │   ├── ui.tsx              ← Button, Dot, StatusPill, Banner, EmptyState, Segmented…
+│   │   ├── ui.tsx              ← Button, IconButton, Dot, StatusPill, SectionTitle, Banner, Segmented, íconos…
 │   │   ├── ReservationItem.tsx ← fila de reserva para las listas
 │   │   └── StorageBanner.tsx   ← aviso cuando el navegador no deja guardar
 │   └── screens/
@@ -82,9 +84,38 @@ garbanzo-cimarron/
 
 **Estilos.** Se usan utilidades de Tailwind directamente en los componentes. Los colores del cliente están definidos como tokens en `@theme`, dentro de `src/index.css`, y eso genera clases como `bg-crema`, `text-monte`, `bg-barro`, `text-carbon`, `bg-maiz`, `text-aji`. Para cambiar un color de marca, alcanza con tocarlo en ese archivo.
 
+**Ojo con `@layer`.** En `src/index.css`, las reglas de `:root`, `html` y `body` (tipografía, fondo y color de texto) están **fuera** de `@layer base` a propósito. En CSS, una regla sin capa le gana a cualquier regla dentro de una capa. Si la app se monta dentro de otra página que tiene su propio estilo de `body` (pasó con el visor de previsualización), ese estilo pisaba Nunito Sans y el fondo crema. No las vuelvas a meter en la capa.
+
 ---
 
-## 2. Qué está simulado y cómo se comporta
+## 2. Navegación y pantallas
+
+La app está pensada para usarse con una mano: los controles para moverse entre meses y días están juntos a la derecha, al alcance del pulgar.
+
+**Barra inferior** (fija): *Mes*, *Hoy*, *Reservar* (botón destacado) y *Panel*. *Mes* lleva al mes del último día que se estaba mirando, no siempre al mes en curso.
+
+**1. Mes** (`MonthScreen.tsx`)
+- Cabecera: el nombre del mes y el año a la izquierda; las flechas `‹` `›` juntas a la derecha.
+- Resumen del mes a 16 px: reservas activas y cubiertos. Si se está viendo otro mes, aparece el enlace «Volver al mes en curso».
+- Grilla con lunes como primer día; los lunes se pintan de gris porque está cerrado. Cada casilla tiene dos puntos: el izquierdo es el almuerzo y el derecho la cena. El día de hoy lleva el número en un círculo terracota. Al volver de un día, su casilla queda marcada con un borde terracota.
+- Leyenda: primero «Almuerzo / Cena» con dos puntos neutros (explica la posición); después solo los colores.
+- «Falta confirmar»: lista de reservas pendientes desde hoy, con un contador amarillo pegado al título, del mismo estilo que la etiqueta «Pendiente». En 0 no se muestra y aparece «Todo confirmado».
+
+**2. Día** (`DayScreen.tsx`)
+- Cabecera: el día de la semana arriba («Hoy · lunes» si es hoy), y debajo el número en serif y el mes en terracota. A la derecha, `‹` `›` para cambiar de día y un botón de calendario que vuelve a la grilla del mes de ese día.
+- Pestañas Almuerzo / Cena con su ocupación; barra con marcas en 50 % y 85 %.
+- Recursos agrupados por sector. Libre: «Queda libre» y se toca para reservar ahí. Mesón: tira de 12 asientos y cuántos quedan. Canceladas y «No vino», plegadas al final.
+- Lunes: aviso de cerrado. Servicio bloqueado: aviso rayado y sin botón de reservar. Día pasado: solo lectura para reservas nuevas.
+
+**3. Formulario** (`ReservationForm.tsx`): fecha y servicio, cubiertos, lugar (solo los que entran), propuesta y hora, nombre y correo, restricciones, notas y estado. Abajo, un resumen con precio estimado y el botón de guardar fijo.
+
+**4. Ficha** (`ReservationDetail.tsx`): datos de la reserva y las acciones del estado actual. Cancelar y «No vino» piden confirmación.
+
+**5. Panel** (`PanelScreen.tsx`): pide la clave. Mesas activas, bloqueos de servicio, borrar reservas y restaurar datos de prueba.
+
+---
+
+## 3. Qué está simulado y cómo se comporta
 
 | Tema | Qué hace hoy | Dónde conectar lo real |
 |---|---|---|
@@ -98,7 +129,7 @@ garbanzo-cimarron/
 
 ---
 
-## 3. Datos de ejemplo y cómo reiniciarlos
+## 4. Datos de ejemplo y cómo reiniciarlos
 
 Están en `src/data/seed.ts`. La semilla se carga **solo la primera vez**, cuando no existe la clave `garbanzo-cimarron.agenda.v1`. Las fechas se calculan a partir del día en que se abre la app, así que el caso del briefing siempre queda en el futuro cercano. Sea **S** el sábado próximo:
 
@@ -157,7 +188,7 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 
 ---
 
-## 4. Decisiones que no estaban en el encargo
+## 5. Decisiones que no estaban en el encargo
 
 - **Qué estados ocupan el lugar.** El encargo nombraba Pendiente y Confirmada. Sumé **Sentada y Finalizada**, para que una mesa que ya comió no se pueda volver a vender en el mismo servicio. Solo Cancelada y No vino liberan el lugar. Se cambia en el objeto `STATUS` de `src/lib/catalog.ts`.
 - **Duplicados.** Defino la combinación como **correo + fecha + servicio**, entre reservas que ocupan lugar. El correo se compara sin espacios en los extremos y en minúsculas. Se guarda sin esos espacios.
@@ -173,10 +204,12 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 - **Tema único claro.** La paleta del cliente es clara, así que no se adapta al modo oscuro del sistema.
 - **Sin librerías extra.** Ni router ni librería de fechas: la navegación por hash y el armado del mes están hechos a mano en `src/state/router.ts` y `src/lib/dates.ts`, como pedía el encargo para las fechas.
 - **Sin teléfono.** El encargo no lo pedía y así se evita cargar más datos personales.
+- **Uso con una mano.** En Mes y en Día, los controles de navegación están juntos a la derecha, al alcance del pulgar, en lugar de rodear el título.
+- **Volver al mes.** Desde el día se vuelve con el botón de calendario o con la pestaña *Mes*. Los dos llevan al mes de ese día y dejan marcada su casilla. El gesto «atrás» del teléfono también funciona, porque la navegación usa el historial del navegador.
 
 ---
 
-## 5. Reglas de negocio, en corto
+## 6. Reglas de negocio, en corto
 
 - **Servicios**: almuerzo de 12:30 a 15:30 y cena de 20:00 a 23:30, de martes a domingo. Los lunes está cerrado.
 - **Dos formas de reservar**:
@@ -190,14 +223,14 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
   - Rayado: bloqueado.
 - **Cupo por servicio**: cada fecha y cada servicio tienen su propio cupo. No hay reinicio manual.
 
-## 6. Probar el caso del briefing
+## 7. Probar el caso del briefing
 
 1. En el mes, el sábado próximo tiene la cena en amarillo (55 %).
 2. Entrá al día y abrí la pestaña **Cena**: el Salón del Fondo dice «Queda libre».
-3. Tocalo, poné 12 cubiertos, dejá la reserva en «Pendiente» y guardá. La cena sube a 79 % y sigue en amarillo.
+3. Tocalo, poné 12 cubiertos, dejá la reserva en «Pendiente» y guardá. La cena sube a 78 % (41 de 52) y sigue en amarillo. Con el botón de calendario volvés al mes, con ese sábado marcado.
 4. Andá al sábado siguiente, abrí el cumpleaños de 12 y cancelalo. El salón vuelve a quedar libre y la cena pasa de 88 % (rojo) a 65 % (amarillo), sin recargar.
 
-## 7. Identidad
+## 8. Identidad
 
 - **Tipografías**: DM Serif Display 400 (titulares) y Nunito Sans (texto).
 - **Colores** (tokens en `@theme` de `src/index.css`):
