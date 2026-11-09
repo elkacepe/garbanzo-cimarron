@@ -142,10 +142,24 @@ export function Eyebrow({ children, className = '' }: { children: ReactNode; cla
   return <p className={`m-0 text-[11px] font-extrabold uppercase tracking-[.16em] text-barro ${className}`}>{children}</p>;
 }
 
-export function SectionTitle({ title, aside }: { title: string; aside?: ReactNode }) {
+/**
+ * Título de sección. `count` muestra un contador pegado al título, con el mismo
+ * estilo que la etiqueta «Pendiente» (amarillo, bold, 11,5 px). `aside` va a la derecha.
+ */
+export function SectionTitle({ title, aside, count, countLabel }: { title: string; aside?: ReactNode; count?: number; countLabel?: string }) {
   return (
     <div className="mt-7 mb-2.5 flex items-baseline justify-between gap-2">
-      <h2 className="text-2xl text-monte">{title}</h2>
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl text-monte">{title}</h2>
+        {count !== undefined && count > 0 && (
+          <span
+            aria-label={countLabel}
+            className="grid h-[22px] min-w-[22px] place-items-center rounded-full bg-maiz px-1.5 text-[11.5px] font-extrabold leading-none text-carbon tabular-nums"
+          >
+            {count}
+          </span>
+        )}
+      </div>
       {aside && <span className="text-suave tabular-nums">{aside}</span>}
     </div>
   );

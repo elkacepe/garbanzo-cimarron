@@ -109,7 +109,7 @@ export function MonthScreen({ month, highlight }: { month: string; highlight?: s
         <Legend kind="bloqueado" text="Bloqueado" />
       </div>
 
-      <SectionTitle title="Falta confirmar" aside={pendientes.length} />
+      <SectionTitle title="Falta confirmar" count={pendientes.length} countLabel={`${pendientes.length} ${pendientes.length === 1 ? 'reserva pendiente' : 'reservas pendientes'}`} />
       {pendientes.length ? (
         <div className="flex flex-col gap-2">
           {pendientes.slice(0, 8).map((x) => (
