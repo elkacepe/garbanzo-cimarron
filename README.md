@@ -6,55 +6,79 @@ Agenda interna de reservas para un comedor vegano pequeño, con sus mesas, un me
 
 ## 1. Cómo arrancar el proyecto
 
-No hay dependencias que instalar, no hay build y no hace falta Node. Todo el proyecto es un único archivo, `index.html`, con HTML, CSS y JavaScript sin frameworks.
+**Stack:** React 19 + TypeScript 5.9 + Tailwind CSS v4, con Vite 8. Tests con Vitest. No hay backend: los datos viven en `localStorage`.
 
-**Opción rápida.** Abrí `index.html` con doble clic en Chrome, Safari o Firefox.
-
-**Opción recomendada.** Levantá un servidor local, que se parece más a cómo va a funcionar publicado:
+**Requisitos:** Node **22** (indicado en `.nvmrc`). Como mínimo, Node 20.19, que es lo que exige Vite 8. Probado con npm 10.
 
 ```bash
 git clone https://github.com/elkacepe/garbanzo-cimarron.git
 cd garbanzo-cimarron
-python3 -m http.server 8080
-# abrí http://localhost:8080
+nvm use              # opcional, toma la versión de .nvmrc
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-Si preferís Node (cualquier versión 18 o superior), en vez de Python:
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Levanta la app en local con recarga en caliente. |
+| `npm run dev -- --host` | Igual, y además la deja accesible desde el celular en la misma red, en la IP que muestra la consola. |
+| `npm test` | Corre los tests de la lógica de cupo, fechas, duplicados y guardado. |
+| `npm run typecheck` | Chequea los tipos de TypeScript. |
+| `npm run build` | Chequea los tipos y genera la versión publicable en `dist/`. |
+| `npm run preview` | Sirve el contenido de `dist/` para probar el build. |
 
-```bash
-npx serve .
-```
+El build usa rutas relativas (`base: './'` en `vite.config.ts`), así que `dist/` se puede publicar tal cual en GitHub Pages o en cualquier hosting estático.
 
-**Para probarlo en el celular.** Con el servidor local corriendo, entrá desde el teléfono a `http://IP-de-tu-compu:8080`, con los dos dispositivos en la misma red. También podés activar GitHub Pages en *Settings → Pages → Branch: main / root*.
-
-**Requisitos.** Un navegador actual con `localStorage` habilitado. Las tipografías se cargan desde Google Fonts. Sin conexión, la app usa fuentes de sistema y sigue funcionando.
+Las tipografías se cargan desde Google Fonts en `index.html`. Sin conexión, la app usa fuentes de sistema y sigue funcionando.
 
 ### Dónde está cada cosa
 
 ```
 garbanzo-cimarron/
-├── index.html   ← toda la app
-└── README.md
+├── index.html                  ← HTML base: fuentes de Google y el punto de montaje #root
+├── vite.config.ts              ← Vite + plugin de React + plugin de Tailwind v4
+├── tsconfig.json
+├── src/
+│   ├── main.tsx                ← arranque: monta <App/> dentro de <AgendaProvider/>
+│   ├── App.tsx                 ← elige la pantalla según la ruta y guarda el estado de navegación
+│   ├── index.css               ← Tailwind v4: tokens de marca en @theme y utilidades propias
+│   ├── types.ts                ← tipos: Resource, Reservation, ServiceBlock, AgendaState
+│   ├── lib/                    ← lógica pura, sin React (es lo que cubren los tests)
+│   │   ├── catalog.ts          ← servicios, propuestas, restricciones, estados, tope de cubiertos
+│   │   ├── capacity.ts         ← reglas de cupo: ocupación, colores, opciones, horarios, duplicados
+│   │   ├── dates.ts            ← fechas propias: grilla del mes con lunes primero, formatos
+│   │   └── format.ts           ← pesos, plurales
+│   ├── data/
+│   │   ├── seed.ts             ← datos de ejemplo
+│   │   └── storage.ts          ← lectura y guardado en localStorage  ◀ punto de conexión
+│   ├── state/
+│   │   ├── AgendaContext.tsx   ← estado global, commit (guarda primero, muestra después) y avisos
+│   │   └── router.ts           ← navegación por hash, sin librerías
+│   ├── components/
+│   │   ├── AppShell.tsx        ← barra superior, barra inferior y aviso flotante
+│   │   ├── ui.tsx              ← Button, Dot, StatusPill, Banner, EmptyState, Segmented…
+│   │   ├── ReservationItem.tsx ← fila de reserva para las listas
+│   │   └── StorageBanner.tsx   ← aviso cuando el navegador no deja guardar
+│   └── screens/
+│       ├── MonthScreen.tsx       ← 1. Calendario mensual
+│       ├── DayScreen.tsx         ← 2. Día: servicios, mesas, mesón y salón
+│       ├── ReservationForm.tsx   ← 3. Nueva reserva o edición
+│       ├── ReservationDetail.tsx ← 4. Ficha y cambios de estado
+│       └── PanelScreen.tsx       ← 5. Panel del encargado  ◀ clave del panel
+└── tests/
+    └── capacity.test.ts        ← 17 tests de reglas de negocio y localStorage
 ```
 
-Dentro de `index.html`, los números de línea son aproximados:
+**Rutas** (por hash, para que funcionen en cualquier hosting estático):
 
-| Qué | Dónde |
-|---|---|
-| Comentario con decisiones clave (clave del panel, clave de storage, duplicados) | Encabezado, líneas 12–24 |
-| Estilos (colores en `:root`, tipografías, componentes) | `<style>`, líneas ~25–280 |
-| Barra superior y barra de navegación inferior | `<header class="topbar">` y `<nav class="tabbar">`, líneas ~287–305 |
-| **Configuración y catálogo**: servicios, propuestas, restricciones, estados | `/* Configuración */`: `SERVICES`, `PROPOSALS`, `RESTRICTIONS`, `STATUS`, `MAX_COVERS` (líneas ~311–336) |
-| **Datos de ejemplo** | `/* Semilla */`: `seedResources()` y `makeSeed()` (líneas ~362–418) |
-| **Lógica de datos**: lectura y guardado | `/* Persistencia */`: `load()`, `persist()` y `commit()` (líneas ~420–455) |
-| **Reglas de cupo**: ocupación, colores, lugares disponibles, horarios | `/* Reglas de cupo */`: `serviceState()`, `serviceUsage()`, `level()`, `resourceOptions()` y `timeSlots()` (líneas ~456–515) |
-| Navegación por hash (`#mes-AAAA-MM`, `#dia-AAAA-MM-DD`, `#nueva`, `#reserva-gc-0001`, `#editar-…`, `#panel`) | `/* Navegación */`: `go()` y `render()` (líneas ~524–563) |
-| Pantalla 1: Mes | `renderMes()` (línea ~572) |
-| Pantalla 2: Día | `renderDia()`, `servicePanel()` y `resourceCard()` (línea ~648) |
-| Pantalla 3: Formulario | `renderForm()`, `refreshForm()` y `submitForm()` (línea ~743) |
-| Pantalla 4: Ficha de reserva | `renderDetalle()` y `setStatus()` (línea ~890) |
-| Pantalla 5: Panel del encargado | `renderPanel()` (línea ~945) |
-| Manejo de clics, cambios y envíos de formularios | `/* Eventos */` (línea ~997) |
+- `#mes-AAAA-MM`
+- `#dia-AAAA-MM-DD`
+- `#nueva`
+- `#reserva-gc-0001`
+- `#editar-gc-0001`
+- `#panel`
+
+**Estilos.** Se usan utilidades de Tailwind directamente en los componentes. Los colores del cliente están definidos como tokens en `@theme`, dentro de `src/index.css`, y eso genera clases como `bg-crema`, `text-monte`, `bg-barro`, `text-carbon`, `bg-maiz`, `text-aji`. Para cambiar un color de marca, alcanza con tocarlo en ese archivo.
 
 ---
 
@@ -62,19 +86,19 @@ Dentro de `index.html`, los números de línea son aproximados:
 
 | Tema | Qué hace hoy | Dónde conectar lo real |
 |---|---|---|
-| **Base de datos** | Todo vive en el `localStorage` del navegador, bajo la clave `garbanzo-cimarron.agenda.v1`, como un único JSON: `{version, seq, resources, reservations, blocks}`. No se comparte entre dispositivos ni entre navegadores. | `load()` (lectura) y `persist()` (escritura). Toda modificación pasa por `commit(next)`, que guarda primero y recién después actualiza la pantalla. Para conectar una API, cambiá `persist()` por una llamada al servidor y respetá esa regla. |
-| **Correos** | **No se envía ningún correo.** El correo se pide, se guarda y se muestra en la ficha de la reserva. Solo sirve para detectar duplicados. No hay confirmaciones ni recordatorios. | El punto natural es dentro de `submitForm()` y de `setStatus()`, justo después de un `commit()` exitoso. |
-| **Pagos y señas** | **No hay pagos, señas ni cobros**, ni simulados. Los precios por persona se muestran solo como referencia, con un total estimado en el resumen del formulario. | No hay punto de conexión previsto. Si se agrega, iría en `submitForm()` antes del `commit()`. |
-| **Acceso al panel** | Clave compartida **`garbanzo2026`**, definida en `PANEL_CLAVE`. Se valida en el navegador y queda abierta mientras dure la pestaña (`sessionStorage`, clave `garbanzo-cimarron.panel`). No hay cuentas, alta de usuarios ni recuperación de acceso. **No es seguridad real**: cualquiera puede leer la clave en el código. Solo evita cambios por descuido. | Validación en el `submit` del formulario `#lock`, dentro de `/* Eventos */`. Para algo real hace falta autenticar en un servidor. |
-| **Fallo de guardado** | Si `localStorage` falla (navegador sin espacio, modo privado que bloquea), aparece un aviso en rojo. Lo cargado queda en el formulario y no cambia ningún código, cantidad ni estado. | Para probarlo, ejecutá en la consola `window.__simularFalloGuardado = true` y desactivalo con `false`. Ese interruptor está en `persist()`. |
-| **Datos ilegibles** | Si el JSON guardado está roto, la app **no lo pisa**. Muestra un aviso y deja restaurar los datos de prueba desde el panel. | `load()`. |
-| **Fecha de hoy** | Se toma del reloj del dispositivo, en su zona horaria. | Helper `todayISO()`. |
+| **Base de datos** | Todo vive en el `localStorage` del navegador, en la clave `garbanzo-cimarron.agenda.v1`. Es un único JSON con la forma `AgendaState` (`{version, seq, resources, reservations, blocks}`). No se comparte entre dispositivos ni entre navegadores. | `src/data/storage.ts`: `loadAgenda()` lee y `saveAgenda()` escribe. Toda modificación pasa por `commit()` en `src/state/AgendaContext.tsx`, que guarda primero y solo si salió bien actualiza la pantalla. Para conectar una API, reemplazá esas dos funciones manteniendo el contrato: `saveAgenda` devuelve `false` si no pudo guardar. Con una API asíncrona, `commit` tendría que esperar la respuesta antes de llamar a `setState`. |
+| **Correos** | **No se envía ningún correo.** El correo se pide, se guarda y se muestra en la ficha. Solo sirve para detectar duplicados. No hay confirmaciones ni recordatorios. | `submit()` en `ReservationForm.tsx` y `setStatus()` en `ReservationDetail.tsx`, después de un `commit()` que devuelva `true`. |
+| **Pagos y señas** | **No hay pagos, señas ni cobros**, ni simulados. Los precios por persona son solo referencia, con un total estimado en el resumen del formulario. | No hay punto previsto. Si se agrega, iría en `submit()` de `ReservationForm.tsx`, antes del `commit()`. |
+| **Acceso al panel** | Clave compartida **`garbanzo2026`**, definida en `PANEL_CLAVE` dentro de `src/screens/PanelScreen.tsx`. Se valida en el navegador y queda abierta mientras dure la pestaña (`sessionStorage`, clave `garbanzo-cimarron.panel`). No hay cuentas, alta de usuarios ni recuperación de acceso. **No es seguridad real**: la clave está en el código que descarga el navegador, así que solo evita cambios por descuido. | Componente `Lock` en `PanelScreen.tsx`. Para algo real hace falta autenticar en un servidor. |
+| **Fallo de guardado** | Si `localStorage` falla (sin espacio, modo privado que bloquea), aparece un aviso en rojo, lo cargado queda en el formulario y no cambia ningún código, cantidad ni estado. | Para probarlo, ejecutá en la consola `window.__simularFalloGuardado = true` y desactivalo con `false`. Ese interruptor está en `saveAgenda()`. |
+| **Datos ilegibles** | Si el JSON guardado está roto, la app **no lo pisa**. Muestra un aviso y deja restaurar los datos de prueba desde el panel. | `loadAgenda()`. |
+| **Fecha de hoy** | Se toma del reloj del dispositivo, en su zona horaria. | `todayISO()` en `src/lib/dates.ts`. |
 
 ---
 
 ## 3. Datos de ejemplo y cómo reiniciarlos
 
-La semilla se carga **solo la primera vez**, cuando no existe la clave `garbanzo-cimarron.agenda.v1`. Las fechas se calculan a partir del día en que se abre la app, así que el caso del briefing siempre queda en el futuro cercano. Sea **S** el sábado próximo:
+Están en `src/data/seed.ts`. La semilla se carga **solo la primera vez**, cuando no existe la clave `garbanzo-cimarron.agenda.v1`. Las fechas se calculan a partir del día en que se abre la app, así que el caso del briefing siempre queda en el futuro cercano. Sea **S** el sábado próximo:
 
 **9 recursos, 52 cubiertos por servicio:**
 
@@ -121,7 +145,7 @@ Los nombres son inventados y todos los correos son del dominio `example.com`.
 ### Cómo volver al estado inicial
 
 1. **Desde la app.** Entrá en *Panel*, poné la clave `garbanzo2026` y tocá **Restaurar datos de prueba**. Pide confirmación y solo reemplaza la clave de esta app.
-2. **Desde el navegador.** Abrí la consola y ejecutá:
+2. **Desde el navegador.** Abrí la consola (con la app abierta) y ejecutá:
    ```js
    localStorage.removeItem('garbanzo-cimarron.agenda.v1'); location.reload();
    ```
@@ -133,7 +157,7 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 
 ## 4. Decisiones que no estaban en el encargo
 
-- **Qué estados ocupan el lugar.** El encargo nombraba Pendiente y Confirmada. Sumé **Sentada y Finalizada**, para que una mesa que ya comió no se pueda volver a vender en el mismo servicio. Solo Cancelada y No vino liberan el lugar. Se cambia en el objeto `STATUS`.
+- **Qué estados ocupan el lugar.** El encargo nombraba Pendiente y Confirmada. Sumé **Sentada y Finalizada**, para que una mesa que ya comió no se pueda volver a vender en el mismo servicio. Solo Cancelada y No vino liberan el lugar. Se cambia en el objeto `STATUS` de `src/lib/catalog.ts`.
 - **Duplicados.** Defino la combinación como **correo + fecha + servicio**, entre reservas que ocupan lugar. El correo se compara sin espacios en los extremos y en minúsculas. Se guarda sin esos espacios.
 - **Horarios según la propuesta.** Se ofrecen cada 30 minutos, pero solo los que permiten terminar antes del cierre. Por ejemplo, la Mesa de festejo (150 min) en la cena va de 20:00 a 21:00.
 - **Mesa de festejo.** Solo se ofrece cuando el lugar elegido es el Salón del Fondo y el servicio es la cena.
@@ -145,6 +169,7 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 - **Cálculo de porcentaje.** Para mostrar el porcentaje se redondea hacia abajo, así un 49,9 % se ve como 49 % y queda verde, coherente con el umbral.
 - **Día sin reservas.** Se dibuja con anillos verdes en lugar de puntos llenos. Sigue siendo «verde», pero se distingue de un día con poca gente.
 - **Tema único claro.** La paleta del cliente es clara, así que no se adapta al modo oscuro del sistema.
+- **Sin librerías extra.** Ni router ni librería de fechas: la navegación por hash y el armado del mes están hechos a mano en `src/state/router.ts` y `src/lib/dates.ts`, como pedía el encargo para las fechas.
 - **Sin teléfono.** El encargo no lo pedía y así se evita cargar más datos personales.
 
 ---
@@ -173,7 +198,7 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 ## 7. Identidad
 
 - **Tipografías**: DM Serif Display 400 (titulares) y Nunito Sans (texto).
-- **Colores** (tokens en `:root` del `<style>`):
+- **Colores** (tokens en `@theme` de `src/index.css`):
   - Fondo: `#F7F1E3`.
   - Primario y texto: `#3B4A2F`.
   - Secundario: `#C4663A`.

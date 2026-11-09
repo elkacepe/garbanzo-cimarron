@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/*
+  Identidad de Comedor Garbanzo Cimarrón como tokens de Tailwind v4.
+  Cada --color-* genera utilidades: bg-monte, text-barro, border-linea-2, etc.
+  Tema único claro: la paleta del cliente es clara.
+*/
+@theme {
+  --color-crema: #F7F1E3;   /* fondo de la app */
+  --color-monte: #3B4A2F;   /* primario y texto */
+  --color-barro: #C4663A;   /* secundario */
+  --color-carbon: #2A2A22;  /* negro */
+  --color-blanco: #FFFFFF;
+  --color-maiz: #E5B73B;    /* detalles, pendiente, ocupación media */
+  --color-aji: #B23A32;     /* detalles, alertas, ocupación alta */
+
+  /* Derivados */
+  --color-libre: #5E7D3E;   /* verde de ocupación baja, distinto del texto */
+  --color-cerrado: #D6CEBA;
+  --color-lunes: #EDE5D2;
+  --color-papel: #FCF9F1;
+  --color-linea: rgb(59 74 47 / 0.14);
+  --color-linea-2: rgb(59 74 47 / 0.30);
+  --color-suave: rgb(42 42 34 / 0.64);
+  --color-alerta: #F8EAE5;
+
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-sans: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Margen lateral que respeta las barras del sistema en el teléfono. */
+@utility gutter {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Rayado para servicios bloqueados. */
+@utility rayado {
+  background: repeating-linear-gradient(45deg, var(--color-carbon) 0 2px, var(--color-crema) 2px 4px);
+  box-shadow: inset 0 0 0 1px var(--color-carbon);
+}
+@utility rayado-suave {
+  background: repeating-linear-gradient(-45deg, var(--color-papel) 0 8px, #ede6d6 8px 11px);
+}
+@utility rayado-relleno {
+  background: repeating-linear-gradient(-45deg, transparent 0 6px, rgb(59 74 47 / 0.04) 6px 7px);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  html,
+  body {
+    background: var(--color-crema);
+    color: var(--color-monte);
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Franja bajo la barra de estado del teléfono. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 30;
+    background: var(--color-crema);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    text-wrap: balance;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-barro);
+    outline-offset: 2px;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
