@@ -46,32 +46,38 @@
   background: repeating-linear-gradient(-45deg, transparent 0 6px, rgb(59 74 47 / 0.04) 6px 7px);
 }
 
+/*
+  Base de la página FUERA de @layer a propósito: las reglas sin capa le ganan a las que
+  están en capas. Así ninguna hoja externa (por ejemplo, la que pone un host o un visor
+  alrededor de la app) puede pisar la tipografía Nunito Sans, el fondo crema o el color de texto.
+*/
+:root {
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+html,
+body {
+  background: var(--color-crema);
+  color: var(--color-monte);
+}
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+/* Franja bajo la barra de estado del teléfono. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 30;
+  background: var(--color-crema);
+}
+
 @layer base {
-  :root {
-    color-scheme: light;
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-  html,
-  body {
-    background: var(--color-crema);
-    color: var(--color-monte);
-  }
-  body {
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 15px;
-    line-height: 1.45;
-    -webkit-font-smoothing: antialiased;
-  }
-  /* Franja bajo la barra de estado del teléfono. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0 0 auto;
-    height: env(safe-area-inset-top, 0px);
-    z-index: 30;
-    background: var(--color-crema);
-  }
   h1,
   h2,
   h3 {
