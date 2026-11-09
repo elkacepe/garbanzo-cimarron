@@ -31,20 +31,26 @@ export function DayScreen({
   const T = todayISO();
   const d = parseISO(date);
 
+  // Mismo criterio que el mes: fecha a la izquierda, las dos flechas juntas a la derecha.
   const head = (
     <div className="flex items-center gap-2.5">
-      <IconButton label="Día anterior" onClick={() => navigate('dia-' + addDays(date, -1))}>
-        <Chevron dir="l" />
-      </IconButton>
-      <div className="min-w-0 flex-1 text-center">
-        <Eyebrow>{date === T ? 'Hoy' : DIAS[d.getDay()]}</Eyebrow>
-        <h1 className="text-[clamp(32px,9.5vw,42px)] leading-none text-monte">
-          {d.getDate()} de {MESES[d.getMonth()]}
+      <div className="min-w-0 flex-1">
+        <Eyebrow>{date === T ? `Hoy · ${DIAS[d.getDay()]}` : DIAS[d.getDay()]}</Eyebrow>
+        <h1 className="mt-1 text-[clamp(34px,10vw,46px)] leading-none text-monte">
+          <span className="tabular-nums">{d.getDate()}</span>
+          <span className="ml-1.5 align-[.45em] font-sans text-[.5em] font-extrabold tracking-[.06em] text-barro">
+            {MESES[d.getMonth()]}
+          </span>
         </h1>
       </div>
-      <IconButton label="Día siguiente" onClick={() => navigate('dia-' + addDays(date, 1))}>
-        <Chevron dir="r" />
-      </IconButton>
+      <div className="flex flex-none gap-2">
+        <IconButton label="Día anterior" onClick={() => navigate('dia-' + addDays(date, -1))}>
+          <Chevron dir="l" />
+        </IconButton>
+        <IconButton label="Día siguiente" onClick={() => navigate('dia-' + addDays(date, 1))}>
+          <Chevron dir="r" />
+        </IconButton>
+      </div>
     </div>
   );
 
