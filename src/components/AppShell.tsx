@@ -3,7 +3,7 @@ import { useAgenda } from '../state/AgendaContext';
 import { navigate } from '../state/router';
 import { fechaCorta, todayISO } from '../lib/dates';
 
-export type Tab = 'mes' | 'hoy' | 'nueva' | 'panel' | null;
+export type Tab = 'mes' | 'hoy' | 'nueva' | 'reservas' | 'panel' | null;
 
 export function AppShell({ tab, onNew, month, children }: { tab: Tab; onNew: () => void; month: string; children: ReactNode }) {
   const { toast } = useAgenda();
@@ -22,18 +22,20 @@ export function AppShell({ tab, onNew, month, children }: { tab: Tab; onNew: () 
       <main className="gutter mx-auto max-w-[640px] pt-4 pb-[calc(104px+env(safe-area-inset-bottom,0px))]">{children}</main>
 
       <nav aria-label="Secciones" className="fixed inset-x-0 bottom-0 z-20 bg-monte pb-[env(safe-area-inset-bottom,0px)]">
-        <div className="gutter mx-auto grid max-w-[640px] grid-cols-[1fr_1fr_1.3fr_1fr] gap-1 py-2">
+        {/* Cinco pestañas iguales; «Reservar» al centro, destacada en terracota. */}
+        <div className="gutter mx-auto grid max-w-[640px] grid-cols-5 gap-1 py-2">
           <NavButton current={tab === 'mes'} onClick={() => navigate('mes-' + month)} label="Mes" icon={<path d="M3 10h18M8 3v4M16 3v4M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />} />
           <NavButton current={tab === 'hoy'} onClick={() => navigate('dia-' + todayISO())} label="Hoy" icon={<><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>} />
           <button
             type="button"
             onClick={onNew}
             aria-current={tab === 'nueva' ? 'page' : undefined}
-            className={`flex min-h-12 items-center justify-center gap-1.5 rounded-lg bg-barro px-0.5 py-1.5 text-sm font-bold text-blanco ${tab === 'nueva' ? 'shadow-[inset_0_0_0_2px_var(--color-crema)]' : ''}`}
+            className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg bg-barro px-0.5 py-1.5 text-[11px] font-extrabold tracking-[.04em] text-blanco ${tab === 'nueva' ? 'shadow-[inset_0_0_0_2px_var(--color-crema)]' : ''}`}
           >
             <svg viewBox="0 0 24 24" className="size-[22px]" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             Reservar
           </button>
+          <NavButton current={tab === 'reservas'} onClick={() => navigate('reservas')} label="Reservas" icon={<><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>} />
           <NavButton current={tab === 'panel'} onClick={() => navigate('panel')} label="Panel" icon={<><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>} />
         </div>
       </nav>

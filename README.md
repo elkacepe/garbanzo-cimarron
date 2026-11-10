@@ -1,6 +1,6 @@
 # Agenda · Comedor Garbanzo Cimarrón
 
-Agenda interna de reservas para un comedor vegano pequeño, con sus mesas, un mesón compartido y un salón privado. Muestra el mes completo de un vistazo y evita que un mismo lugar quede reservado dos veces en un servicio. Está pensada para el celular y funciona desde 360 px de ancho.
+Agenda interna de reservas para un comedor vegano pequeño, con sus mesas, un mesón compartido y un salón privado. Muestra el mes completo de un vistazo, evita que un mismo lugar quede reservado dos veces en un servicio, permite buscar y filtrar todas las reservas, y deja administrar las mesas desde el panel. Está pensada para el celular y funciona desde 360 px de ancho.
 
 **Previsualización:** https://garbanzo-cimarron.vercel.app/ (Vercel, se actualiza con cada push a `main`).
 
@@ -26,7 +26,7 @@ npm run dev          # http://localhost:5173
 |---|---|
 | `npm run dev` | Levanta la app en local con recarga en caliente. |
 | `npm run dev -- --host` | Igual, y además la deja accesible desde el celular en la misma red, en la IP que muestra la consola. |
-| `npm test` | Corre los tests de la lógica de cupo, fechas, duplicados y guardado. |
+| `npm test` | Corre los 34 tests: cupo, fechas, duplicados, guardado, buscador, filtros y gestión de recursos. |
 | `npm run typecheck` | Chequea los tipos de TypeScript. |
 | `npm run build` | Chequea los tipos y genera la versión publicable en `dist/`. |
 | `npm run preview` | Sirve el contenido de `dist/` para probar el build. |
@@ -50,6 +50,8 @@ garbanzo-cimarron/
 │   ├── lib/                    ← lógica pura, sin React (es lo que cubren los tests)
 │   │   ├── catalog.ts          ← servicios, propuestas, restricciones, estados, tope de cubiertos
 │   │   ├── capacity.ts         ← reglas de cupo: ocupación, colores, opciones, horarios, duplicados
+│   │   ├── search.ts           ← buscador y filtros del listado
+│   │   ├── resources.ts        ← alta, edición y borrado de recursos: validaciones y choques con reservas futuras
 │   │   ├── dates.ts            ← fechas propias: grilla del mes con lunes primero, formatos
 │   │   └── format.ts           ← pesos, plurales
 │   ├── data/
@@ -62,15 +64,18 @@ garbanzo-cimarron/
 │   │   ├── AppShell.tsx        ← barra superior, barra inferior y aviso flotante
 │   │   ├── ui.tsx              ← Button, IconButton, Dot, StatusPill, SectionTitle, Banner, Segmented, íconos…
 │   │   ├── ReservationItem.tsx ← fila de reserva para las listas
+│   │   ├── ResourceEditor.tsx  ← formulario de alta y edición de un recurso, con borrado
 │   │   └── StorageBanner.tsx   ← aviso cuando el navegador no deja guardar
 │   └── screens/
 │       ├── MonthScreen.tsx       ← 1. Calendario mensual
 │       ├── DayScreen.tsx         ← 2. Día: servicios, mesas, mesón y salón
 │       ├── ReservationForm.tsx   ← 3. Nueva reserva o edición
 │       ├── ReservationDetail.tsx ← 4. Ficha y cambios de estado
-│       └── PanelScreen.tsx       ← 5. Panel del encargado  ◀ clave del panel
+│       ├── ReservationsScreen.tsx← 5. Listado con buscador y filtros
+│       └── PanelScreen.tsx       ← 6. Panel del encargado y gestión de mesas  ◀ clave del panel
 └── tests/
-    └── capacity.test.ts        ← 17 tests de reglas de negocio y localStorage
+    ├── capacity.test.ts        ← 17 tests de cupo, fechas, duplicados y localStorage
+    └── search-resources.test.ts← 17 tests del buscador, los filtros y la gestión de recursos
 ```
 
 **Rutas** (por hash, para que funcionen en cualquier hosting estático):
@@ -80,6 +85,7 @@ garbanzo-cimarron/
 - `#nueva`
 - `#reserva-gc-0001`
 - `#editar-gc-0001`
+- `#reservas`
 - `#panel`
 
 **Estilos.** Se usan utilidades de Tailwind directamente en los componentes. Los colores del cliente están definidos como tokens en `@theme`, dentro de `src/index.css`, y eso genera clases como `bg-crema`, `text-monte`, `bg-barro`, `text-carbon`, `bg-maiz`, `text-aji`. Para cambiar un color de marca, alcanza con tocarlo en ese archivo.
@@ -92,7 +98,7 @@ garbanzo-cimarron/
 
 La app está pensada para usarse con una mano: los controles para moverse entre meses y días están juntos a la derecha, al alcance del pulgar.
 
-**Barra inferior** (fija): *Mes*, *Hoy*, *Reservar* (botón destacado) y *Panel*. *Mes* lleva al mes del último día que se estaba mirando, no siempre al mes en curso.
+**Barra inferior** (fija): *Mes*, *Hoy*, *Reservar* (al centro, destacado), *Reservas* y *Panel*. *Mes* lleva al mes del último día que se estaba mirando, no siempre al mes en curso.
 
 **1. Mes** (`MonthScreen.tsx`)
 - Cabecera: el nombre del mes y el año a la izquierda; las flechas `‹` `›` juntas a la derecha.
@@ -111,7 +117,29 @@ La app está pensada para usarse con una mano: los controles para moverse entre 
 
 **4. Ficha** (`ReservationDetail.tsx`): datos de la reserva y las acciones del estado actual. Cancelar y «No vino» piden confirmación.
 
-**5. Panel** (`PanelScreen.tsx`): pide la clave. Mesas activas, bloqueos de servicio, borrar reservas y restaurar datos de prueba.
+**5. Listado de reservas** (`ReservationsScreen.tsx`, ruta `#reservas`)
+- **Buscador** por nombre o correo. Ignora espacios en los extremos, mayúsculas y tildes: «aguero» encuentra «Agüero».
+- **Filtros**, plegados detrás del botón *Filtros* (que muestra cuántos hay activos y un resumen al lado):
+  - Estado: uno o varios a la vez; *Todos* los limpia.
+  - Servicio: los dos, almuerzo o cena.
+  - Fechas: atajos *Desde hoy*, *Este mes* y *Todas las fechas*, más *Desde* y *Hasta* (los dos extremos incluidos). Si el rango está al revés, lo avisa en rojo.
+- Arranca en *Desde hoy*. Los resultados se agrupan por día y se ordenan por fecha, servicio y hora.
+- Al abrir una reserva, la flecha de la ficha vuelve al listado con la búsqueda y los filtros intactos.
+- Estados vacíos: sin reservas cargadas, o sin resultados (con botón *Limpiar búsqueda y filtros*).
+- La lógica está en `src/lib/search.ts` (`filterReservations`).
+
+**6. Panel** (`PanelScreen.tsx`): pide la clave. Mesas y lugares, bloqueos de servicio, borrar reservas y restaurar datos de prueba.
+
+**Gestión de mesas y lugares** (en el panel, `ResourceEditor.tsx` + `src/lib/resources.ts`)
+- **Alta**: *Agregar mesa o lugar*. Nombre, sector (sugiere los existentes), cómo se reserva (*Mesa entera* o *Por asiento*), capacidad de 1 a 40 y mínimo de personas (solo mesa entera; 0 = sin mínimo).
+- **Edición**: se toca el lugar o *Editar*. Mismos campos.
+- **Borrado**: al final de la edición, con confirmación.
+- **Activar o desactivar**: el interruptor de cada fila.
+- **Validaciones de campos**: el nombre es obligatorio y no se puede repetir (se compara sin espacios en los extremos, en minúsculas y sin tildes), el sector es obligatorio, la capacidad va de 1 a 40 y el mínimo no puede superar la capacidad.
+- **Validación de reservas futuras** («futuras» = de hoy en adelante, en estado Pendiente, Confirmada o Sentada):
+  - **Editar**: si el cambio deja afuera alguna reserva, no se puede guardar. El aviso aparece mientras se edita y lista cada reserva con el motivo. Casos: mesa entera con capacidad menor a lo reservado o mínimo mayor; por asiento con menos asientos que los ya tomados en algún servicio; pasar a mesa entera con dos o más reservas en el mismo servicio.
+  - **Borrar** y **desactivar**: no se permite mientras tenga reservas futuras. Se listan para abrir cada ficha y pasarlas a otro lugar (editando la reserva) o cancelarlas.
+- Los cambios impactan al instante en la capacidad total del servicio, los colores del calendario y las opciones del formulario. El tope de cubiertos por reserva sigue al lugar activo más grande.
 
 ---
 
@@ -194,10 +222,16 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 - **Duplicados.** Defino la combinación como **correo + fecha + servicio**, entre reservas que ocupan lugar. El correo se compara sin espacios en los extremos y en minúsculas. Se guarda sin esos espacios.
 - **Horarios según la propuesta.** Se ofrecen cada 30 minutos, pero solo los que permiten terminar antes del cierre. Por ejemplo, la Mesa de festejo (150 min) en la cena va de 20:00 a 21:00.
 - **Mesa de festejo.** Solo se ofrece cuando el lugar elegido es el Salón del Fondo y el servicio es la cena.
-- **Tope de cubiertos.** Una reserva admite de 1 a 12 cubiertos, porque 12 es el recurso más grande. No hay reservas que combinen varias mesas.
+- **Tope de cubiertos.** Una reserva admite de 1 hasta la capacidad del lugar activo más grande (12 con los datos de prueba). No hay reservas que combinen varias mesas.
 - **Fechas pasadas.** No se cargan reservas nuevas en días que ya pasaron. Sí se pueden cambiar estados y ver el día.
 - **Bloquear con reservas.** Se puede bloquear un servicio que ya tiene reservas. Esas reservas siguen en pie y el panel avisa cuántas hay. No se pueden bloquear lunes, porque ya están cerrados.
-- **Mesas inactivas.** Desactivar una mesa la saca de la oferta y de la capacidad total. Sus reservas existentes no se borran y se ven como «fuera de servicio».
+- **Mesas inactivas.** Desactivar una mesa la saca de la oferta y de la capacidad total. Solo se puede si no tiene reservas de hoy en adelante; las pasadas se conservan.
+- **Borrado lógico de recursos.** Borrar un lugar no lo elimina del JSON: se marca con `deletedAt` y queda inactivo. Así las reservas pasadas siguen mostrando su nombre («Mesa X · eliminado» en el día). Desaparece del panel, del calendario y del formulario.
+- **Reservas que bloquean cambios en un recurso.** Cuentan las de hoy en adelante en Pendiente, Confirmada o Sentada. Finalizada, Cancelada y No vino no bloquean.
+- **Capacidad de un recurso.** De 1 a 40. El tope de cubiertos por reserva ya no es fijo en 12: es la capacidad del lugar activo más grande.
+- **Buscador sin tildes.** Además de quitar espacios y pasar a minúsculas, el buscador y el control de nombres repetidos ignoran las tildes, porque en la caja se escribe rápido.
+- **Listado arranca «desde hoy».** Es lo que más se consulta. *Todas las fechas* muestra también el historial.
+- **Cinco pestañas.** *Reservas* se sumó a la barra inferior; *Reservar* quedó al centro con el mismo formato que las demás para que entren las cinco a 360 px.
 - **Transiciones de estado.** Pendiente pasa a Confirmada o a Sentada. Confirmada pasa a Sentada o vuelve a Pendiente. Sentada pasa a Finalizada. Pendiente y Confirmada también pueden pasar a Cancelada o No vino, con confirmación. Cancelada, No vino y Finalizada son finales. Solo se editan reservas Pendientes o Confirmadas.
 - **Cálculo de porcentaje.** Para mostrar el porcentaje se redondea hacia abajo, así un 49,9 % se ve como 49 % y queda verde, coherente con el umbral.
 - **Día sin reservas.** Se dibuja con anillos verdes en lugar de puntos llenos. Sigue siendo «verde», pero se distingue de un día con poca gente.
@@ -229,6 +263,13 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 2. Entrá al día y abrí la pestaña **Cena**: el Salón del Fondo dice «Queda libre».
 3. Tocalo, poné 12 cubiertos, dejá la reserva en «Pendiente» y guardá. La cena sube a 78 % (41 de 52) y sigue en amarillo. Con el botón de calendario volvés al mes, con ese sábado marcado.
 4. Andá al sábado siguiente, abrí el cumpleaños de 12 y cancelalo. El salón vuelve a quedar libre y la cena pasa de 88 % (rojo) a 65 % (amarillo), sin recargar.
+
+### Probar el listado y la gestión de mesas
+
+1. **Listado.** Tocá *Reservas* en la barra inferior: aparecen las reservas de hoy en adelante. Escribí «aguero» y queda solo el cumpleaños de Flor Agüero. Borrá la búsqueda, abrí *Filtros*, elegí *Todas las fechas* y los estados *Cancelada* y *No vino*: quedan 2.
+2. **Desactivar con reservas.** En *Panel*, apagá *Mesa Ventana 1*: no lo deja y lista sus 2 reservas futuras.
+3. **Editar con reservas.** Entrá a *Mesón Compartido* y bajá los asientos a 5: no deja guardar, porque el sábado siguiente ya hay 6 tomados. Con 10, guarda.
+4. **Alta y borrado.** *Agregar mesa o lugar* → «Mesa Galería», sector «Patio», capacidad 8. La cena de cualquier día pasa a 60 cubiertos de capacidad. Después entrá a la mesa nueva y borrala: como no tiene reservas, se borra con confirmación.
 
 ## 8. Identidad
 

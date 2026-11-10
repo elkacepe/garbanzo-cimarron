@@ -3,7 +3,7 @@ import { isValidISO } from '../lib/dates';
 
 /**
  * Navegación por hash, sin librerías:
- * #mes-AAAA-MM · #dia-AAAA-MM-DD · #nueva · #editar-gc-0001 · #reserva-gc-0001 · #panel
+ * #mes-AAAA-MM · #dia-AAAA-MM-DD · #nueva · #editar-gc-0001 · #reserva-gc-0001 · #reservas · #panel
  */
 export type Route =
   | { name: 'mes'; month?: string }
@@ -11,6 +11,7 @@ export type Route =
   | { name: 'nueva' }
   | { name: 'editar'; id: string }
   | { name: 'reserva'; id: string }
+  | { name: 'reservas' }
   | { name: 'panel' };
 
 export function parseHash(hash: string): Route {
@@ -21,6 +22,7 @@ export function parseHash(hash: string): Route {
   if (h === 'nueva') return { name: 'nueva' };
   if ((m = h.match(/^editar-(gc-\d+)$/))) return { name: 'editar', id: m[1] };
   if ((m = h.match(/^reserva-(gc-\d+)$/))) return { name: 'reserva', id: m[1] };
+  if (h === 'reservas') return { name: 'reservas' };
   if (h === 'panel') return { name: 'panel' };
   return { name: 'mes' };
 }

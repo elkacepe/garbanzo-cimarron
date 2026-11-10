@@ -201,7 +201,7 @@ function ResourceCard({ resource: r, usage: b, canBook, onBook }: { resource: Re
       <strong className="text-[15px] font-extrabold">{r.name}</strong>
       <span className="whitespace-nowrap text-[12.5px] text-suave">
         {capLabel}
-        {!r.active && ' · fuera de servicio'}
+        {r.deletedAt ? ' · eliminado' : !r.active && ' · fuera de servicio'}
       </span>
     </div>
   );

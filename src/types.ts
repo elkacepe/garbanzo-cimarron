@@ -13,6 +13,11 @@ export interface Resource {
   /** Mínimo de personas para poder reservarlo (0 = sin mínimo). */
   minPeople: number;
   active: boolean;
+  /**
+   * Borrado lógico: si tiene fecha, el recurso ya no aparece en el panel ni se ofrece,
+   * pero se conserva para que las reservas pasadas sigan mostrando su nombre.
+   */
+  deletedAt?: string;
 }
 
 export type ReservationStatus = 'pendiente' | 'confirmada' | 'sentada' | 'finalizada' | 'cancelada' | 'novino';

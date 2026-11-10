@@ -18,7 +18,7 @@ const MESSAGES: Record<ReservationStatus, string> = {
 };
 
 /** Pantalla 4 · Ficha de la reserva y cambios de estado. */
-export function ReservationDetail({ reservation: x }: { reservation: Reservation }) {
+export function ReservationDetail({ reservation: x, backToList = false }: { reservation: Reservation; backToList?: boolean }) {
   const { state, commit } = useAgenda();
   const [confirming, setConfirming] = useState<'cancelada' | 'novino' | null>(null);
   const r = state.resources.find((r) => r.id === x.resourceId);
@@ -94,7 +94,7 @@ export function ReservationDetail({ reservation: x }: { reservation: Reservation
     <>
       <StorageBanner />
       <div className="mb-1.5 flex items-center gap-3">
-        <IconButton label="Volver al día" onClick={() => navigate('dia-' + x.date)}>
+        <IconButton label={backToList ? 'Volver al listado' : 'Volver al día'} onClick={() => navigate(backToList ? 'reservas' : 'dia-' + x.date)}>
           <Chevron dir="l" />
         </IconButton>
         <Eyebrow className="flex-1">{fechaLarga(x.date)}</Eyebrow>

@@ -8,6 +8,8 @@ import { STORAGE_KEY } from '../data/storage';
 import { makeSeed } from '../data/seed';
 import { StorageBanner } from '../components/StorageBanner';
 import { Button, Eyebrow, SectionTitle } from '../components/ui';
+import { BlockingReservations, ResourceEditor } from '../components/ResourceEditor';
+import { futureReservations, liveResources, resourceSummary } from '../lib/resources';
 
 /**
  * PUNTO DE CONEXIÓN · acceso.
@@ -88,8 +90,31 @@ function Panel({ onClose }: { onClose: () => void }) {
   const [blkSvc, setBlkSvc] = useState<ServiceId | 'ambos'>('almuerzo');
   const [blkReason, setBlkReason] = useState('');
   const [blkError, setBlkError] = useState('');
+  // Recurso en edición: id, 'nuevo' o null (vista del panel).
+  const [editing, setEditing] = useState<string | null>(null);
+  // Recurso que no se pudo desactivar porque tiene reservas futuras.
+  const [blockedToggle, setBlockedToggle] = useState<string | null>(null);
 
-  const capTotal = state.resources.filter((r) => r.active).reduce((a, r) => a + r.capacity, 0);
+  const resources = liveResources(state);
+  const capTotal = resources.filter((r) => r.active).reduce((a, r) => a + r.capacity, 0);
+
+  const openEditor = (id: string) => {
+    setBlockedToggle(null);
+    setEditing(id);
+    window.scrollTo(0, 0);
+  };
+  if (editing) {
+    const r = resources.find((y) => y.id === editing);
+    const done = () => {
+      setEditing(null);
+      window.scrollTo(0, 0);
+    };
+    if (editing !== 'nuevo' && !r) {
+      done();
+      return null;
+    }
+    return <ResourceEditor key={editing} resource={r} onDone={done} />;
+  }
   const blocks = state.blocks.filter((b) => b.date >= T).sort((a, b) => (a.date + a.service).localeCompare(b.date + b.service));
 
   const addBlock = (e: FormEvent) => {
@@ -125,35 +150,58 @@ function Panel({ onClose }: { onClose: () => void }) {
       <SectionTitle title="Mesas y lugares" aside={`${capTotal} cubiertos por servicio`} />
       <div className={card}>
         <div className="divide-y divide-linea">
-          {state.resources.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-2.5 py-2">
-              <div>
-                <strong className="block font-extrabold">{r.name}</strong>
-                <small className="text-[12.5px] text-suave">
-                  {r.sector} · {r.mode === 'seat' ? `${r.capacity} asientos, por asiento` : `${r.capacity} cubiertos, mesa entera${r.minPeople ? `, mínimo ${r.minPeople}` : ''}`}
-                </small>
+          {resources.map((r) => {
+            const blocked = blockedToggle === r.id ? futureReservations(state, r.id, T) : [];
+            return (
+              <div key={r.id} className="py-2">
+                <div className="flex items-center justify-between gap-2.5">
+                  <button type="button" data-editar={r.id} onClick={() => openEditor(r.id)} className="min-w-0 flex-1 text-left" aria-label={`Editar ${r.name}`}>
+                    <strong className="block font-extrabold">{r.name}</strong>
+                    <small className="text-[12.5px] text-suave">
+                      {r.sector} · {resourceSummary(r)}
+                      {!r.active && ' · fuera de servicio'}
+                    </small>
+                  </button>
+                  <Button size="sm" aria-hidden="true" tabIndex={-1} onClick={() => openEditor(r.id)}>Editar</Button>
+                  <label className="relative h-[30px] w-[50px] flex-none">
+                    <input
+                      type="checkbox"
+                      data-toggle={r.id}
+                      aria-label={`${r.name} activa`}
+                      checked={r.active}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        // Sacar de servicio una mesa con reservas futuras las dejaría sin lugar.
+                        if (!on && futureReservations(state, r.id, T).length) {
+                          setBlockedToggle(r.id);
+                          return;
+                        }
+                        setBlockedToggle(null);
+                        commit((d) => {
+                          d.resources.find((y) => y.id === r.id)!.active = on;
+                        }, `${r.name}: ${on ? 'activa' : 'fuera de servicio'}`);
+                      }}
+                      className="peer absolute inset-0 m-0 cursor-pointer opacity-0"
+                    />
+                    <span className="pointer-events-none absolute inset-0 rounded-full bg-cerrado transition-colors peer-checked:bg-libre peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-barro after:absolute after:top-[3px] after:left-[3px] after:size-6 after:rounded-full after:bg-blanco after:shadow-[0_1px_2px_rgb(0_0_0/.2)] after:transition-transform peer-checked:after:translate-x-5" />
+                  </label>
+                </div>
+                {blocked.length > 0 && (
+                  <div role="alert" className="mt-2 rounded-[10px] border-[1.5px] border-aji bg-alerta px-3.5 py-3">
+                    <strong className="block text-aji">No se puede sacar de servicio: tiene {reservas(blocked.length)} de hoy en adelante.</strong>
+                    <span className="text-[13px] text-carbon">Pasalas a otro lugar o cancelalas desde su ficha.</span>
+                    <BlockingReservations list={blocked} />
+                  </div>
+                )}
               </div>
-              <label className="relative h-[30px] w-[50px] flex-none">
-                <input
-                  type="checkbox"
-                  data-toggle={r.id}
-                  aria-label={`${r.name} activa`}
-                  checked={r.active}
-                  onChange={(e) => {
-                    const on = e.target.checked;
-                    commit((d) => {
-                      d.resources.find((y) => y.id === r.id)!.active = on;
-                    }, `${r.name}: ${on ? 'activa' : 'fuera de servicio'}`);
-                  }}
-                  className="peer absolute inset-0 m-0 cursor-pointer opacity-0"
-                />
-                <span className="pointer-events-none absolute inset-0 rounded-full bg-cerrado transition-colors peer-checked:bg-libre peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-barro after:absolute after:top-[3px] after:left-[3px] after:size-6 after:rounded-full after:bg-blanco after:shadow-[0_1px_2px_rgb(0_0_0/.2)] after:transition-transform peer-checked:after:translate-x-5" />
-              </label>
-            </div>
-          ))}
+            );
+          })}
         </div>
+        <Button variant="barro" id="r-nuevo" onClick={() => openEditor('nuevo')}>Agregar mesa o lugar</Button>
       </div>
-      <p className="mt-2 mb-0 text-[13px] text-suave">Una mesa inactiva no se ofrece ni suma a la capacidad. Sus reservas siguen guardadas.</p>
+      <p className="mt-2 mb-0 text-[13px] text-suave">
+        Tocá un lugar para editarlo o borrarlo. Si tiene reservas de hoy en adelante, no se puede borrar, sacar de servicio ni achicar por debajo de lo reservado.
+      </p>
 
       <SectionTitle title="Bloquear un servicio" />
       <form id="blk" noValidate onSubmit={addBlock} className={card}>

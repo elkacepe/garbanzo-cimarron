@@ -3,10 +3,11 @@ import type { ProposalId, Reservation, RestrictionId, ServiceId } from '../types
 import { useAgenda } from '../state/AgendaContext';
 import { navigate } from '../state/router';
 import { addDays, fechaLarga, isMonday, isValidISO, todayISO } from '../lib/dates';
-import { MAX_COVERS, RESTRICTIONS, SERVICE_ORDER, SERVICES, proposalById, serviceWithArticle } from '../lib/catalog';
+import { RESTRICTIONS, SERVICE_ORDER, SERVICES, proposalById, serviceWithArticle } from '../lib/catalog';
 import { blockOf, defaultProposal, findDuplicate, pctLabel, proposalsFor, resourceOptions, serviceState, serviceUsage, timeSlots } from '../lib/capacity';
 import { asientos, personas, pesos } from '../lib/format';
 import { codeFor } from '../data/seed';
+import { maxCovers } from '../lib/resources';
 import { StorageBanner } from '../components/StorageBanner';
 import { Banner, Button, Chevron, EmptyState, IconButton, Segmented } from '../components/ui';
 import type { NewReservationPrefill } from './DayScreen';
@@ -65,6 +66,8 @@ export function ReservationForm({ editing, prefill }: { editing?: Reservation; p
   const set = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }));
 
   const excl = editing?.id;
+  // Tope de cubiertos: el recurso activo más grande (cambia si se agregan mesas en el panel).
+  const MAX_COVERS = maxCovers(state);
   const validDate = isValidISO(d.date);
 
   // ¿Se puede reservar en esa fecha y servicio?

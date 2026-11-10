@@ -10,6 +10,8 @@ import { DayScreen, type NewReservationPrefill } from './screens/DayScreen';
 import { ReservationForm } from './screens/ReservationForm';
 import { ReservationDetail } from './screens/ReservationDetail';
 import { PanelScreen } from './screens/PanelScreen';
+import { ReservationsScreen } from './screens/ReservationsScreen';
+import { emptyFilters, type ReservationFilters } from './lib/search';
 
 export default function App() {
   const route = useRoute();
@@ -23,6 +25,10 @@ export default function App() {
   // Datos con los que arranca una reserva nueva; `formKey` reinicia el formulario.
   const [prefill, setPrefill] = useState<NewReservationPrefill | undefined>();
   const [formKey, setFormKey] = useState(0);
+  // Filtros del listado: arrancan «desde hoy» y se mantienen al abrir una ficha y volver.
+  const [filters, setFilters] = useState<ReservationFilters>(() => emptyFilters(todayISO()));
+  // De dónde se abrió la ficha, para que «Volver» lleve al listado o al día.
+  const [fromList, setFromList] = useState(false);
 
   const startNew = (pre?: NewReservationPrefill) => {
     setPrefill(pre);
@@ -34,7 +40,13 @@ export default function App() {
   let tab: Tab = null;
   let screen;
   switch (route.name) {
+    case 'reservas':
+      if (!fromList) setFromList(true);
+      tab = 'reservas';
+      screen = <ReservationsScreen filters={filters} onChange={setFilters} />;
+      break;
     case 'mes': {
+      if (fromList) setFromList(false);
       const m = route.month ?? month;
       if (m !== month) setMonth(m);
       tab = 'mes';
@@ -42,6 +54,7 @@ export default function App() {
       break;
     }
     case 'dia': {
+      if (fromList) setFromList(false);
       // La pestaña «Mes» y el botón de calendario llevan al mes de este día.
       if (route.date !== lastDay) setLastDay(route.date);
       if (monthOf(route.date) !== month) setMonth(monthOf(route.date));
@@ -77,7 +90,7 @@ export default function App() {
       } else if (route.name === 'editar') {
         screen = <ReservationForm key={'edit-' + x.id} editing={x} />;
       } else {
-        screen = <ReservationDetail key={x.id + x.status} reservation={x} />;
+        screen = <ReservationDetail key={x.id + x.status} reservation={x} backToList={fromList} />;
       }
       break;
     }
