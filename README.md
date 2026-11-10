@@ -98,7 +98,7 @@ garbanzo-cimarron/
 
 La app está pensada para usarse con una mano: los controles para moverse entre meses y días están juntos a la derecha, al alcance del pulgar.
 
-**Barra inferior** (fija): *Mes*, *Hoy*, *Reservar* (al centro, destacado), *Reservas* y *Panel*. *Mes* lleva al mes del último día que se estaba mirando, no siempre al mes en curso.
+**Barra inferior** (fija): *Mes*, *Hoy*, *+ Nueva* (al centro, destacado; crea una reserva), *Reservas* y *Panel*. *Mes* lleva al mes del último día que se estaba mirando, no siempre al mes en curso.
 
 **1. Mes** (`MonthScreen.tsx`)
 - Cabecera: el nombre del mes y el año a la izquierda; las flechas `‹` `›` juntas a la derecha.
@@ -231,7 +231,7 @@ En el panel también está **Borrar todas las reservas**, que deja las mesas y l
 - **Capacidad de un recurso.** De 1 a 40. El tope de cubiertos por reserva ya no es fijo en 12: es la capacidad del lugar activo más grande.
 - **Buscador sin tildes.** Además de quitar espacios y pasar a minúsculas, el buscador y el control de nombres repetidos ignoran las tildes, porque en la caja se escribe rápido.
 - **Listado arranca «desde hoy».** Es lo que más se consulta. *Todas las fechas* muestra también el historial.
-- **Cinco pestañas.** *Reservas* se sumó a la barra inferior; *Reservar* quedó al centro con el mismo formato que las demás para que entren las cinco a 360 px.
+- **Cinco pestañas.** *Reservas* se sumó a la barra inferior. El botón para crear una reserva pasó de «Reservar» a «+ Nueva», para no confundirse con «Reservas» al estar al lado, y quedó al centro con el mismo formato que las demás para que entren las cinco a 360 px.
 - **Transiciones de estado.** Pendiente pasa a Confirmada o a Sentada. Confirmada pasa a Sentada o vuelve a Pendiente. Sentada pasa a Finalizada. Pendiente y Confirmada también pueden pasar a Cancelada o No vino, con confirmación. Cancelada, No vino y Finalizada son finales. Solo se editan reservas Pendientes o Confirmadas.
 - **Cálculo de porcentaje.** Para mostrar el porcentaje se redondea hacia abajo, así un 49,9 % se ve como 49 % y queda verde, coherente con el umbral.
 - **Día sin reservas.** Se dibuja con anillos verdes en lugar de puntos llenos. Sigue siendo «verde», pero se distingue de un día con poca gente.
